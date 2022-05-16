@@ -129,7 +129,7 @@ class User extends Authenticatable
     
     // 中略
 
-    /**
+     /**
      * このユーザとフォロー中ユーザの投稿に絞り込む。
      */
     public function feed_microposts()
