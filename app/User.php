@@ -62,6 +62,15 @@ class User extends Authenticatable
     }
     
     /**
+     * このユーザをフォロー中のユーザ。（ Userモデルとの関係を定義）
+     */
+    public function favorites()
+    {
+        return $this->belongsToMany(Micropost::class, 'user_micropost', 'user_id', 'micropost_id')->withTimestamps();
+    }
+    
+    
+    /**
      * $userIdで指定されたユーザをフォローする。
      *
      * @param  int  $userId
@@ -106,6 +115,49 @@ class User extends Authenticatable
             return false;
         }
     }
+    
+    /**
+     * $$micropostIdで指定された投稿をお気に入りにする
+     *
+     * @param  int  $micropostId
+     * @return bool
+     */
+    public function favorite($micropostId)
+    {
+        // すでにお気に入りにしているか
+        $exist = $this->is_favorite($micropostId);
+
+        if ($exist) {
+            // お気に入り済み、または、自分自身の場合は何もしない
+            return false;
+        } else {
+            // 上記以外はお気に入りにする
+            $this->favorites()->attach($micropostId);
+            return true;
+        }
+    }
+    
+    /**
+     * $micropostIdで指定された投稿をお気に入り解除する
+     *
+     * @param  int  $micropostId
+     * @return bool
+     */
+    public function unfavorite($micropostId)
+    {
+        // すでにお気に入りにしているか
+        $exist = $this->is_favorite($micropostId);
+
+        if ($exist) {
+            // 上記以外はお気に入り解除する
+            $this->favorites()->detach($micropostId);
+            return true;
+        } else {
+            // お気に入り済み、または、自分自身の場合は何もしない
+            return false;
+        }
+    }
+    
 
     /**
      * 指定された $userIdのユーザをこのユーザがフォロー中であるか調べる。フォロー中ならtrueを返す。
@@ -120,11 +172,24 @@ class User extends Authenticatable
     }
     
     /**
+     * 指定された $miscropostIdの投稿を、このユーザがお気に入り中であるか調べる
+     * お気に入り中ならtrueを返す
+     * @param  int  $micropostId
+     * @return bool
+     */
+    public function is_favorite($micropostId)
+    {
+        // フォロー中ユーザの中に $userIdのものが存在するか
+        return $this->favorites()->where('micropost_id', $micropostId)->exists();
+    }
+    
+    
+    /**
      * このユーザに関係するモデルの件数をロードする。
      */
     public function loadRelationshipCounts()
     {
-        $this->loadCount(['microposts', 'followings', 'followers']);
+        $this->loadCount(['microposts', 'followings', 'followers', 'favorites']);
     }
     
     // 中略
